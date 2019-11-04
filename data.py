@@ -17,6 +17,8 @@ import tensorflow as tf
 GLOBAL_SIZE = 2
 NODE_SIZE = 2
 EDGE_SIZE = 2
+
+#Generates random data 
 def get_graph_data_dict(num_nodes, num_edges):
   return {
       "globals": np.random.rand(GLOBAL_SIZE).astype(np.float32),
@@ -34,7 +36,7 @@ graph_dicts = [graph_3_nodes_2_edges, graph_2_nodes_1_edges,graph_4_nodes_3_edge
 graphs_tuple = utils_np.data_dicts_to_graphs_tuple(graph_dicts)
   
   
-  
+#Prints the graph tuple (and not graph dict)
 def print_graphs_tuple(graphs_tuple):
   print("Shapes of `GraphsTuple`'s fields:")
   print(graphs_tuple.map(lambda x: x if x is None else x.shape, fields=graphs.ALL_FIELDS))
@@ -48,6 +50,7 @@ def print_graphs_tuple(graphs_tuple):
   print("n_edge:\n{}".format(graphs_tuple.n_edge))
   
 
+ #Plot the graph_tuple
 def plot_graphs_tuple_np(graphs_tuple):
   networkx_graphs = utils_np.graphs_tuple_to_networkxs(graphs_tuple)
   num_graphs = len(networkx_graphs)
