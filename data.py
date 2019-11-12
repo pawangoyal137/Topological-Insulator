@@ -14,9 +14,9 @@ import numpy as np
 import sonnet as snt
 import tensorflow as tf
 
-GLOBAL_SIZE = 2
-NODE_SIZE = 2
-EDGE_SIZE = 2
+GLOBAL_SIZE = 4
+NODE_SIZE = 4
+EDGE_SIZE = 8
 
 #Generates random data 
 def get_graph_data_dict(num_nodes, num_edges):
@@ -34,7 +34,13 @@ graph_4_nodes_3_edges = get_graph_data_dict(num_nodes=4, num_edges=3)
 graph_9_nodes_25_edges = get_graph_data_dict(num_nodes=9, num_edges=25)
 graph_dicts = [graph_3_nodes_2_edges, graph_2_nodes_1_edges,graph_4_nodes_3_edges,graph_9_nodes_25_edges]
 graphs_tuple = utils_np.data_dicts_to_graphs_tuple(graph_dicts)
-  
+
+def generate_data(n,num_nodes,num_edges):
+    graph_dicts=[]
+    for i in range(n):
+        graph_dicts.append(get_graph_data_dict(num_nodes,num_edges))
+    
+    return graph_dicts
   
 #Prints the graph tuple (and not graph dict)
 def print_graphs_tuple(graphs_tuple):
