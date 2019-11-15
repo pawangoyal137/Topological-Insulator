@@ -20,12 +20,18 @@ tf.app.flags.DEFINE_string(
 FLAGS = tf.app.flags.FLAGS
 
 
-def build_graph(pos, ids):
+def build_graph(pos, ids, d):
     graph_dicts = []
     for i in range(len(pos)):
+        n = pos[i]
+        emb = np.zeros((len(n), d))
+        for k in range(len(n)):
+            emb[k][ids[k]] = 1.
+        n = np.concatenate([n, emb], axis=1).astype(np.float32)
+
         graph = {
                 "globals": [0.],
-                "nodes": np.array(pos[i]).astype(np.float32),
+                "nodes": n,
                 "edges": [[0.]],
                 "senders": [0],
                 "receivers": [0],
@@ -39,17 +45,18 @@ def main(_):
     with open('data/train.pkl', 'rb') as f:
         atomId, name_data, x_data, y_data, g_data = pickle.load(f)
 
+    d = len(atomId)
+
     train_x = [i[0] for i in x_data[:5120]]
     train_c = [i[1] for i in x_data[:5120]]
-    train_graph = build_graph(train_x, train_c)
+    train_graph = build_graph(train_x, train_c, d)
     train_y = y_data[:5120]
 
     test_x = [i[0] for i in x_data[5120:]]
     test_c = [i[1] for i in x_data[5120:]]
-    test_graph = build_graph(test_x, test_c)
+    test_graph = build_graph(test_x, test_c, d)
     test_y = y_data[5120:]
 
-    d = len(atomId)
 
     if FLAGS.model == "rnn":
 
@@ -79,20 +86,20 @@ def main(_):
         sess.run(init)
 
         for i in range(100000):
-            k = i % 5120
+            k = i % 128
 
             if FLAGS.model == "rnn":
                 feed_dict = {x: [train_x[k]], c: [train_c[k]], y: [train_y[k]]}
             elif FLAGS.model == "graph":
-                input_graph_data = utils_np.data_dicts_to_graphs_tuple([train_graph[k]])
+                input_graph_data = utils_np.data_dicts_to_graphs_tuple(train_graph[k*40:k*40+40])
                 # feed_dict = {input_graph: input_graph_data, y: [train_y[k]]}
                 feed_dict = utils_tf.get_feed_dict(
                     input_graph, input_graph_data)
-                feed_dict[y] = [train_y[k]]
+                feed_dict[y] = train_y[k*40:k*40+40]
             loss_value, _ = sess.run(
                 [loss, optimizer], feed_dict=feed_dict)
   
-            if k % 512 == 0:
+            if i % 10 == 0:
                 total_loss = 0
                 total_acc = 0
                 discrimiate = np.zeros((4,4)).astype(np.int32)
