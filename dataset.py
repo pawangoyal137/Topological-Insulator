@@ -42,144 +42,109 @@ def read_ti_id():
     return ti_id
 
 
-def cifReader(filename):
+def cifReader(filename, atomId):
     parser = CifParser(filename, occupancy_tolerance=100)
     structure = parser.get_structures()[0]
 
-    space_group = sg(structure).get_space_group_number()
-
-    atoms = set()
+    graph = {}
+    graph['g'] = sg(structure).get_space_group_number()
+    graph['lattice'] = structure._lattice._matrix
+    graph['atoms'] = []
+    graph['coords'] = []
+    graph['name'] = filename
 
     for at in parser.get_structures()[0]._sites:
         x = str(list(at._species._data.keys())[0])
-        atoms.add(x)
-    return atoms, structure, space_group
+        graph['atoms'].append(atomId[x])
+        graph['coords'].append(at._coords)
+    return graph
 
 
-def graph(structure, atomId):
-    ids = []
-    pos = []
-    for at in structure._sites:
-        atom_name = str(list(at._species._data.keys())[0])
-        id = atomId[atom_name]
-        ids.append(id)
-        pos.append((at._coords))
-
-    pos = np.array(pos)
-    ids = np.array(ids)
-    return pos, ids
-    # globals_0 = [structure.lattice]
-
-    # nodes_0 = []
-    # for i in structure.sites:
-    #     nodes_0.append(i)
-
-    # edges_0 = []
-    # senders_0 = []
-    # receivers_0 = []
-    # for i in range(structure.num_sites):
-    #     for j in range(structure.num_sites):
-    #         if i == j:
-    #             continue
-    #         edges_0.append([structure.distance_matrix[i][j]])
-    #         senders_0.append(i)
-    #         receivers_0.append(j)
-
-    # data_dict = {
-    #     "globals": globals_0,
-    #     "nodes": nodes_0,
-    #     "edges": edges_0,
-    #     "senders": senders_0,
-    #     "receivers": receivers_0
-    # }
-
-    # return data_dict
-
-def main(args):
+def atom():
     ti_id = read_ti_id()
 
-
-    print(typeII)
-
     data_dir = "data/all/"
-    count = 0
+
+    # build atom dict first
     atoms = set()
-    structs = []
-    names = []
-    xs = []
-    ys = []
-    gs = []
     for filename in os.listdir(data_dir):
+        id = filename.split('.')[0]
+        id_num = int(id.split('MyBaseFileNameCollCode')[1])
+
+        # skip those are unknown
+        flag = True
+        for k in ti_id:
+            if id_num in ti_id[k]:
+                flag = False
+        if flag:
+            continue
+
         try:
-            id = filename.split('.')[0]
-            id_num = int(id.split('MyBaseFileNameCollCode')[1])
-
-            category = -1
-            for k in ti_id:
-                if id_num in ti_id[k]:
-                    category = k
-                    count += 1
-
-            if category >= 0:
-                ats, struct, space_group = cifReader(data_dir + filename)
-                atoms = atoms | ats
-
-                structs.append(struct)
-                names.append(id_num)
-                ys.append(category)
-                gs.append(space_group)
-                print(count)
+            parser = CifParser(data_dir + filename, occupancy_tolerance=100)
+            structure = parser.get_structures()[0]
+            for at in parser.get_structures()[0]._sites:
+                x = str(list(at._species._data.keys())[0])
+                atoms.add(x)
         except:
-            print('error: ', id)
+            print(filename)
+            
+        print(len(atoms))
 
-
-    # build atom id dict
     atomId = {}
     i = 0
     for at in atoms:
         atomId[at] = i
         i += 1
     print(atomId)
+    atom_file = "data/atom.pkl"
+    output = open(atom_file, 'wb')
+    pickle.dump(atomId, output, pickle.HIGHEST_PROTOCOL)
+    output.close()
 
-    # build x, y data
-    for i in range(len(structs)):
-        xs.append(graph(structs[i], atomId))
 
-    print(gs)
+def main():
+    ti_id = read_ti_id()
 
-    trainName = []
-    trainX = []
-    trainY = []
-    trainG = []
-    testName = []
-    testX = []
-    testY = []
-    testG = []
+    data_dir = "data/all/"
+    with open('data/atom.pkl', 'rb') as f:
+        atomId = pickle.load(f)
 
-    for i in range(len(xs)):
-        if gs[i] in typeII:
-            # for prediction
-            testName.append(names[i])
-            testX.append(xs[i])
-            testY.append(ys[i])
-            testG.append(gs[i])
-        else:
-            trainName.append(names[i])
-            trainX.append(xs[i])
-            trainY.append(ys[i])
-            trainG.append(gs[i])
+    train_dicts = []
+    test_dicts = []
+
+    for filename in os.listdir(data_dir):
+        id = filename.split('.')[0]
+        id_num = int(id.split('MyBaseFileNameCollCode')[1])
+
+        category = -1
+        for k in ti_id:
+            if id_num in ti_id[k]:
+                category = k
+        if category == -1:
+            continue
+
+        print(filename)
+
+        try:
+            graph = cifReader(data_dir + filename, atomId)
+            graph['y'] = category
+            if graph['g'] in typeII:
+                test_dicts.append(graph)
+            else:
+                train_dicts.append(graph)
+        except:
+            print(filename)            
 
     train_file = "data/train.pkl"
     output = open(train_file, 'wb')
-    pickle.dump((atomId, trainName, trainX, trainY, trainG), output, pickle.HIGHEST_PROTOCOL)
+    pickle.dump(train_dicts, output, pickle.HIGHEST_PROTOCOL)
     output.close()
 
-    test_file = "data/test.pkl"
+    test_file = "data/predict.pkl"
     output = open(test_file, 'wb')
-    pickle.dump((atomId, testName, testX, testY, testG), output, pickle.HIGHEST_PROTOCOL)
+    pickle.dump(test_dicts, output, pickle.HIGHEST_PROTOCOL)
     output.close()
 
 
 if __name__ == '__main__':
-    args = sys.argv
-    main(args)
+    main()

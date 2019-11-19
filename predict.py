@@ -1,24 +1,26 @@
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 import model
 import graph_nets as gn
 import numpy as np
 import pickle
 import tensorflow as tf
 
+from train import build_dict
 
 def main():
-    with open('data/train.pkl', 'rb') as f:
-        atomId, name_data, x_data, y_data, g_data = pickle.load(f)
+    with open('data/predict.pkl', 'rb') as f:
+        predict_graphs = pickle.load(f)
 
-    input_x = [i[0] for i in x_data]
-    input_c = [i[1] for i in x_data]
-
-    x = tf.placeholder(tf.float32, [None, None, 3])
-    c = tf.placeholder(tf.int32, [None, None])
-    d = len(atomId)
-
-    y_hat = model.naive(x, c, d)
+    
+    pos = tf.placeholder(tf.float32, [None, None, 3])
+    ids = tf.placeholder(tf.int32, [None, None])
+    lattice = tf.placeholder(tf.float32, [None, 3, 3])
+    y = tf.placeholder(tf.int64, [None])
+    seq_len = tf.placeholder(tf.int32, [None])
+    h_hat = model.naive(pos, ids, seq_len)
+    h_lattice = tf.reshape(lattice, [-1, 9])
+    h = tf.concat([h_hat, h_lattice], axis=1)
+    y_hat = tf.layers.dense(h, 4, activation=None)
 
     # load model
     saver = tf.train.Saver()
@@ -30,17 +32,22 @@ def main():
     with tf.Session() as sess:
         saver.restore(sess, "model/model.ckpt")
 
-        for i in range(len(x_data)):
-            y_value = sess.run(y_hat, feed_dict={x:[input_x[i]], c:[input_c[i]]})
-            y_value = np.argmax(y_value)
-            print(name_data[i], y_data[i], y_value)
-            if y_value == 2:
-                ti.append(name_data[i])
+        for i in range(len(predict_graphs)):
+            batch_pos, batch_ids, batch_lattice, batch_y, batch_seq_len = build_dict([predict_graphs[i]], 'rnn')
+            feed_dict = {pos: batch_pos, ids: batch_ids, 
+                                lattice: batch_lattice, y:batch_y, seq_len:batch_seq_len}
+            y_hat_value = sess.run(y_hat, feed_dict=feed_dict)
+            y_value = np.argmax(y_hat_value)
+            # print(predict_graphs[i]['name'], predict_graphs[i]['y'], y_value)
             if y_value == 3:
-                tci.append(name_data[i])  
+                ti.append((y_hat_value[3], predict_graphs[i]['name']))
+            if y_value == 2:
+                tci.append((y_hat_value[2], predict_graphs[i]['name']))
 
-    print("TI:", ti)
-    print("TCI:", tci)         
+    ti.sort(reverse=True)            
+    tci.sort(reverse=True)            
+    print(ti)
+    print(tci)
 
 if __name__ == '__main__':
     main()
