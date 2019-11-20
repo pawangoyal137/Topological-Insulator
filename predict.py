@@ -96,11 +96,11 @@ def main(_):
     print("TI")
     for i in ti:
         p, name = i
-        print(name, "confidence =", p)
+        print(name, "\t", p)
     print("TCI")
     for i in tci:
         p, name = i
-        print(name, "confidence =", p)
+        print(name, "\t", p)
 
 if __name__ == '__main__':
     tf.app.run()

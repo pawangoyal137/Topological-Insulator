@@ -159,6 +159,11 @@ def main(_):
             if i % 100 == 99:
                 total_loss = 0
                 total_acc = 0
+
+                relevant_elements=[0,0,0,0]
+                selected_elements=[0,0,0,0]
+                true_positives=[0,0,0,0]
+
                 discrimiate = np.zeros((4,4)).astype(np.int32)
                 for j in range(len(test_graphs)):
                     if FLAGS.model == 'rnn':
@@ -175,9 +180,31 @@ def main(_):
 
                     loss_value, acc, predicts_value = sess.run(
                                     [loss, accuracy, predicts], feed_dict=feed_dict)
+                    
                     total_acc += acc
                     total_loss += loss_value
                     discrimiate[test_graphs[j]['y']][predicts_value[0]] += 1
+                    
+                    selected_elements[predicts_value[0]]+=1
+                    relevant_elements[test_graphs[j]['y']]+=1
+                    if predicts_value[0]==test_graphs[j]['y']:
+                        true_positives[predicts_value[0]]+=1
+                
+                f1_score=[None,None,None,None]
+                
+                for i in range(4):
+                    precision=None
+                    recall=None
+                    if selected_elements[i]!=0:
+                        precision=true_positives[i]/selected_elements[i] 
+                    
+                    if relevant_elements[i]!=0:
+                        recall=true_positives[i]/relevant_elements[i]
+                    
+                    if precision!=None and recall!=None:
+                        f1_score[i]=2*precision*recall/(precision+recall)
+                        
+                print('F1 score is',f1_score)
                 
                 print('Test Loss is ', total_loss / len(test_graphs), '; accuracy is ', total_acc / len(test_graphs))
                 print(discrimiate)
