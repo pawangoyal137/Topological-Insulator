@@ -6,7 +6,7 @@ import pickle
 import tensorflow as tf
 
 from graph_nets import blocks
-#from graph_nets import graphs
+from graph_nets import graphs
 from graph_nets import modules
 from graph_nets import utils_np
 from graph_nets import utils_tf
