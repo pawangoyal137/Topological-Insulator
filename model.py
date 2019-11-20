@@ -26,25 +26,20 @@ def naive(pos, ids, seq_len):
 
 
 def tinet(input_graph):
-    # W_embed = tf.get_variable(name='Embedding', shape=[d, 32], dtype=tf.float32)
-    # h_embed = tf.nn.embedding_lookup(W_embed, ids)
-
-    # h = tf.concat([h_embed, pos], axis=2)
-
     graph_network_layer1 = modules.GraphNetwork(
-        edge_model_fn=lambda: snt.Linear(output_size=32),
-        node_model_fn=lambda: snt.Linear(output_size=16),
-        global_model_fn=lambda: snt.Linear(output_size=4))
+        edge_model_fn=lambda: snt.Linear(output_size=64),
+        node_model_fn=lambda: snt.Linear(output_size=32),
+        global_model_fn=lambda: snt.Linear(output_size=16))
 
     graph_network_layer2 = modules.GraphNetwork(
-        edge_model_fn=lambda: snt.Linear(output_size=32),
-        node_model_fn=lambda: snt.Linear(output_size=16),
-        global_model_fn=lambda: snt.Linear(output_size=4))
+        edge_model_fn=lambda: snt.Linear(output_size=64),
+        node_model_fn=lambda: snt.Linear(output_size=32),
+        global_model_fn=lambda: snt.Linear(output_size=16))
 
     graph_network_layer3 = modules.GraphNetwork(
-        edge_model_fn=lambda: snt.Linear(output_size=32),
-        node_model_fn=lambda: snt.Linear(output_size=16),
-        global_model_fn=lambda: snt.Linear(output_size=4))
+        edge_model_fn=lambda: snt.Linear(output_size=64),
+        node_model_fn=lambda: snt.Linear(output_size=32),
+        global_model_fn=lambda: snt.Linear(output_size=16))
     
     h1 = graph_network_layer1(input_graph)
     h2 = graph_network_layer2(h1)

@@ -11,8 +11,6 @@ from graph_nets import modules
 from graph_nets import utils_np
 from graph_nets import utils_tf
 
-import tensorflow.python.util as deprecation
-deprecation._PRINT_DEPRECATION_WARNINGS = False
 
 tf.app.flags.DEFINE_string(
     'model', 'graph', 'The name of the RNN model: graph, rnn')
@@ -50,38 +48,41 @@ def build_dict(graphs, model):
             seq_len.append(len(i['atoms']))
         return pos, ids, lattice, y, seq_len
 
-    elif model == "graphs":
+    elif model == "graph":
         graph_dicts = []
         labels = []
-        for i in range(len(pos)):
-            n = pos[i]
-            if len(n) <= 1:
-                print("Empty")
+        lattices = []
+        for i in graphs:
+            N = len(i['atoms'])
+
+            if len(i['atoms']) <= 1:
+                # print("Single Element, skip")
                 continue
 
-            emb = np.zeros((len(n), d))
-            for k in range(len(n)):
-                emb[k][ids[k]] = 1.
-            n = np.concatenate([n, emb], axis=1).astype(np.float32)
+            emb = np.zeros((N, 800))
+            for k in range(N):
+                emb[k][i['atoms'][k]] = 1.
+            nodes = np.concatenate([i['coords'], emb], axis=1).astype(np.float32)
 
             graph = {
-                    "globals": [0.],
-                    "nodes": n,
-                    "senders": [],
-                    "receivers": []
+                    "globals": np.reshape(i['lattice'], [9]).astype(np.float32),
+                    "nodes": nodes,
+                    "senders": [0],
+                    "receivers": [1],
+                    "edges": [[0.]]
             }
-            edges = []
-            for k1 in range(len(n)-1):
-                for k2 in range(k1+1, len(n)):
-                    edges.append([0.])
-                    graph["senders"].append(k1)
-                    graph["receivers"].append(k2)
-            graph["edges"] = np.array(edges).astype(np.float32)
+            # edges = []
+            # for k1 in range(N-1):
+            #     for k2 in range(k1+1, N):
+            #         edges.append([0.])
+            #         graph["senders"].append(k1)
+            #         graph["receivers"].append(k2)
+            # graph["edges"] = np.array(edges).astype(np.float32)
             graph_dicts.append(graph)
-            labels.append(y[i])
-            print(graph["edges"].shape)
+            labels.append(i['y'])
+            lattices.append(i['lattice'])
 
-        return graph_dicts, labels
+        return graph_dicts, labels, lattices
 
 
     
@@ -104,6 +105,7 @@ def main(_):
         h_hat = model.naive(pos, ids, seq_len)
 
     elif FLAGS.model == "graph":
+        modified_graphs, _, _ = build_dict(train_graphs, 'graph')
         input_graph = utils_tf.placeholders_from_data_dicts(modified_graphs[0:1])
         y = tf.placeholder(tf.int64, [None])
         lattice = tf.placeholder(tf.float32, [None, 3, 3])
@@ -136,8 +138,8 @@ def main(_):
     with tf.Session() as sess:
         sess.run(init)
 
-        for i in range(100000):
-            sample_idx = np.random.choice(5120, [1])
+        for i in range(10000):
+            sample_idx = np.random.choice(5120, [4])
             batch_graphs = []
             for k in sample_idx:
                 batch_graphs.append(train_graphs[k])
@@ -147,11 +149,13 @@ def main(_):
                 feed_dict = {pos: batch_pos, ids: batch_ids, 
                         lattice: batch_lattice, y:batch_y, seq_len:batch_seq_len}
             elif FLAGS.model == "graph":
-                raise
-
+                batch_graphnets, batch_labels, batch_lattice = build_dict(batch_graphs, FLAGS.model)
+                train_batch_graph_data = utils_np.data_dicts_to_graphs_tuple(batch_graphnets)
+                feed_dict = {input_graph: train_batch_graph_data, y: batch_labels, 
+                        lattice: batch_lattice}
             loss_value, _ = sess.run(
                 [loss, optimizer], feed_dict=feed_dict)
-  
+
             if i % 100 == 99:
                 total_loss = 0
                 total_acc = 0
@@ -162,12 +166,12 @@ def main(_):
                         feed_dict = {pos: batch_pos, ids: batch_ids, 
                                 lattice: batch_lattice, y:batch_y, seq_len:batch_seq_len}
                     elif FLAGS.model == "graph":
-                        raise
-                    # if FLAGS.model == "rnn":
-                    #     feed_dict = {x: [test_x[j]], c: [test_c[j]], y: [test_y[j]], g: [test_g[j]]}
-                    # elif FLAGS.model == "graph":
-                    #     test_graph_data = utils_np.data_dicts_to_graphs_tuple([test_graph[j]])
-                    #     feed_dict = {input_graph: test_graph_data, y: [test_label[j]]}
+                        batch_graphnets, batch_labels, batch_lattice = build_dict([test_graphs[j]], FLAGS.model)
+                        if not batch_labels:
+                            continue
+                        test_batch_graph_data = utils_np.data_dicts_to_graphs_tuple(batch_graphnets)
+                        feed_dict = {input_graph: test_batch_graph_data, y: batch_labels, 
+                                lattice: batch_lattice}                    
 
                     loss_value, acc, predicts_value = sess.run(
                                     [loss, accuracy, predicts], feed_dict=feed_dict)
@@ -178,7 +182,7 @@ def main(_):
                 print('Test Loss is ', total_loss / len(test_graphs), '; accuracy is ', total_acc / len(test_graphs))
                 print(discrimiate)
     
-        save_path = saver.save(sess, "model/model.ckpt")
+        save_path = saver.save(sess, "model/" + FLAGS.model + "/model.ckpt")
         print("Model saved in path: %s" % save_path)
 
 if __name__ == '__main__':
