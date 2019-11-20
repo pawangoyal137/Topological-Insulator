@@ -6,7 +6,7 @@ import pickle
 import tensorflow as tf
 
 from graph_nets import blocks
-from graph_nets import graphs
+#from graph_nets import graphs
 from graph_nets import modules
 from graph_nets import utils_np
 from graph_nets import utils_tf
@@ -190,19 +190,16 @@ def main(_):
                     if predicts_value[0]==test_graphs[j]['y']:
                         true_positives[predicts_value[0]]+=1
                 
-                f1_score=[None,None,None,None]
+                precision=None
+                recall=None
+                if selected_elements[2]+selected_elements[3]!=0:
+                    precision=(true_positives[2]+true_positives[3])/(selected_elements[2]+selected_elements[3])
                 
-                for i in range(4):
-                    precision=None
-                    recall=None
-                    if selected_elements[i]!=0:
-                        precision=true_positives[i]/selected_elements[i] 
-                    
-                    if relevant_elements[i]!=0:
-                        recall=true_positives[i]/relevant_elements[i]
-                    
-                    if precision!=None and recall!=None:
-                        f1_score[i]=2*precision*recall/(precision+recall)
+                if relevant_elements[2]+relevant_elements[3]!=0:
+                    recall=(true_positives[2]+true_positives[3])/(relevant_elements[2]+relevant_elements[3])
+                
+                if precision!=None and recall!=None:
+                    f1_score=2*precision*recall/(precision+recall)
                         
                 print('F1 score is',f1_score)
                 
