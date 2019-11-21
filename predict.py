@@ -82,12 +82,10 @@ def main(_):
                 y_hat_value = sess.run(y_hat, feed_dict=feed_dict)[0]
                 y_value = np.argmax(y_hat_value)
 
-            if y_value == 3:
+            if y_value == 3 and predict_graphs[i]['y'] == 0:
                 ti.append(softmaxAndName(y_hat_value, predict_graphs[i]['name']))
-            if y_value == 2:
+            if y_value == 2 and predict_graphs[i]['y'] == 0:
                 tci.append(softmaxAndName(y_hat_value, predict_graphs[i]['name']))
-
-
 
 
     ti.sort(reverse=True)            

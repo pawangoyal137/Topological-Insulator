@@ -27,20 +27,21 @@ def naive(pos, ids, seq_len):
 
 def tinet(input_graph):
     graph_network_layer1 = modules.GraphNetwork(
-        edge_model_fn=lambda: snt.Linear(output_size=64),
-        node_model_fn=lambda: snt.Linear(output_size=32),
-        global_model_fn=lambda: snt.Linear(output_size=16))
+        edge_model_fn = lambda: tf.layers.Dense(64, activation=tf.tanh),
+        node_model_fn = lambda: tf.layers.Dense(32, activation=tf.tanh),
+        global_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh))
 
     graph_network_layer2 = modules.GraphNetwork(
-        edge_model_fn=lambda: snt.Linear(output_size=64),
-        node_model_fn=lambda: snt.Linear(output_size=32),
-        global_model_fn=lambda: snt.Linear(output_size=16))
+        edge_model_fn = lambda: tf.layers.Dense(64, activation=tf.tanh),
+        node_model_fn = lambda: tf.layers.Dense(32, activation=tf.tanh),
+        global_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh))
 
     graph_network_layer3 = modules.GraphNetwork(
-        edge_model_fn=lambda: snt.Linear(output_size=64),
-        node_model_fn=lambda: snt.Linear(output_size=32),
-        global_model_fn=lambda: snt.Linear(output_size=16))
+        edge_model_fn = lambda: tf.layers.Dense(64, activation=tf.tanh),
+        node_model_fn = lambda: tf.layers.Dense(32, activation=tf.tanh),
+        global_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh))
     
+
     h1 = graph_network_layer1(input_graph)
     h2 = graph_network_layer2(h1)
     h3 = graph_network_layer3(h2)

@@ -70,11 +70,19 @@ def build_dict(graphs, model):
                     "senders": [0],
                     "receivers": [1],
                     "edges": [[0.]]
+                    # "senders": [],
+                    # "receivers": [],
+                    # "edges": []
             }
             # edges = []
             # for k1 in range(N-1):
             #     for k2 in range(k1+1, N):
-            #         edges.append([0.])
+            #         a = i['coords'][k1]
+            #         b = i['coords'][k2]
+            #         distance = 1/np.linalg.norm(a-b)
+            #         if distance < 0.1:
+            #             continue
+            #         edges.append([distance])
             #         graph["senders"].append(k1)
             #         graph["receivers"].append(k2)
             # graph["edges"] = np.array(edges).astype(np.float32)
@@ -185,21 +193,21 @@ def main(_):
                     total_loss += loss_value
                     discrimiate[test_graphs[j]['y']][predicts_value[0]] += 1
                     
-                    selected_elements[predicts_value[0]]+=1
-                    relevant_elements[test_graphs[j]['y']]+=1
-                    if predicts_value[0]==test_graphs[j]['y']:
-                        true_positives[predicts_value[0]]+=1
+                    selected_elements[predicts_value[0]] += 1
+                    relevant_elements[test_graphs[j]['y']] += 1
+                    if predicts_value[0] == test_graphs[j]['y']:
+                        true_positives[predicts_value[0]] += 1
                 
-                precision=None
-                recall=None
-                if selected_elements[2]+selected_elements[3]!=0:
-                    precision=(true_positives[2]+true_positives[3])/(selected_elements[2]+selected_elements[3])
+                precision = None
+                recall = None
+                if selected_elements[2] + selected_elements[3] != 0:
+                    precision = (true_positives[2] + true_positives[3])/(selected_elements[2] + selected_elements[3])
                 
-                if relevant_elements[2]+relevant_elements[3]!=0:
-                    recall=(true_positives[2]+true_positives[3])/(relevant_elements[2]+relevant_elements[3])
+                if relevant_elements[2] + relevant_elements[3] != 0:
+                    recall = (true_positives[2] + true_positives[3])/(relevant_elements[2] + relevant_elements[3])
                 
-                if precision!=None and recall!=None:
-                    f1_score=2*precision*recall/(precision+recall)
+                if precision != None and recall != None:
+                    f1_score = 2*precision*recall/(precision + recall)
                         
                 print('F1 score is',f1_score)
                 
