@@ -10,13 +10,13 @@ from graph_nets import graphs
 from graph_nets import modules
 from graph_nets import utils_np
 from graph_nets import utils_tf
-
-
+from itertools import permutations
+import random
 tf.app.flags.DEFINE_string(
-    'model', 'graph', 'The name of the RNN model: graph, rnn')
+    'model', 'rnn', 'The name of the RNN model:graph, rnn')
 
 FLAGS = tf.app.flags.FLAGS
-
+RNN_num_layers=2
 
 def build_dict(graphs, model):
     if model == "rnn":
@@ -110,7 +110,7 @@ def main(_):
         lattice = tf.placeholder(tf.float32, [None, 3, 3])
         y = tf.placeholder(tf.int64, [None])
         seq_len = tf.placeholder(tf.int32, [None])
-        h_hat = model.naive(pos, ids, seq_len)
+        h_hat = model.naive(pos, ids, seq_len,RNN_num_layers)
 
     elif FLAGS.model == "graph":
         modified_graphs, _, _ = build_dict(train_graphs, 'graph')
@@ -145,7 +145,7 @@ def main(_):
     # run session
     with tf.Session() as sess:
         sess.run(init)
-
+        
         for i in range(10000):
             sample_idx = np.random.choice(5120, [4])
             batch_graphs = []
@@ -154,6 +154,10 @@ def main(_):
 
             if FLAGS.model == 'rnn':
                 batch_pos, batch_ids, batch_lattice, batch_y, batch_seq_len = build_dict(batch_graphs, FLAGS.model)
+                perms_batch_pos=permutations([0,1,2,3])
+                index=random.randint(0,23)
+                perms_batch_pos=list(perms_batch_pos)[index]
+                batch_pos=[batch_pos[x] for x in perms_batch_pos]
                 feed_dict = {pos: batch_pos, ids: batch_ids, 
                         lattice: batch_lattice, y:batch_y, seq_len:batch_seq_len}
             elif FLAGS.model == "graph":
