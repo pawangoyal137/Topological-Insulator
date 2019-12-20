@@ -154,10 +154,14 @@ def main(_):
 
             if FLAGS.model == 'rnn':
                 batch_pos, batch_ids, batch_lattice, batch_y, batch_seq_len = build_dict(batch_graphs, FLAGS.model)
-                perms_batch_pos=permutations([0,1,2,3])
-                index=random.randint(0,23)
-                perms_batch_pos=list(perms_batch_pos)[index]
-                batch_pos=[batch_pos[x] for x in perms_batch_pos]
+#                for i in range(4):
+#                    actual_len=batch_seq_len[i]
+#                    batch_pos_i=batch_pos[i][:actual_len]
+#                    np.random.shuffle(batch_pos_i)
+#                    batch_pos[i][:actual_len]=batch_pos_i
+#                    batch_ids_i=batch_ids[i][:actual_len]
+#                    random.shuffle(batch_ids_i)
+#                    batch_ids[i][:actual_len]=batch_ids_i
                 feed_dict = {pos: batch_pos, ids: batch_ids, 
                         lattice: batch_lattice, y:batch_y, seq_len:batch_seq_len}
             elif FLAGS.model == "graph":
