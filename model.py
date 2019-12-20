@@ -26,26 +26,45 @@ def naive(pos, ids, seq_len):
 
 
 def tinet(input_graph):
+    embedding = blocks.NodeBlock(
+        node_model_fn=lambda: tf.keras.layers.Embedding(800, 32),
+        use_received_edges=False,
+        use_sent_edges=False,
+        use_nodes=True,
+        use_globals=False)
     graph_network_layer1 = modules.GraphNetwork(
-        edge_model_fn = lambda: tf.layers.Dense(64, activation=tf.tanh),
-        node_model_fn = lambda: tf.layers.Dense(32, activation=tf.tanh),
-        global_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh))
-
+        edge_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
+        node_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
+        global_model_fn = lambda: tf.layers.Dense(8, activation=tf.tanh))
     graph_network_layer2 = modules.GraphNetwork(
-        edge_model_fn = lambda: tf.layers.Dense(64, activation=tf.tanh),
-        node_model_fn = lambda: tf.layers.Dense(32, activation=tf.tanh),
-        global_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh))
-
+        edge_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
+        node_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
+        global_model_fn = lambda: tf.layers.Dense(8, activation=tf.tanh))
     graph_network_layer3 = modules.GraphNetwork(
-        edge_model_fn = lambda: tf.layers.Dense(64, activation=tf.tanh),
-        node_model_fn = lambda: tf.layers.Dense(32, activation=tf.tanh),
-        global_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh))
-    
+        edge_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
+        node_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
+        global_model_fn = lambda: tf.layers.Dense(8, activation=tf.tanh))
+    graph_network_layer4 = modules.GraphNetwork(
+        edge_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
+        node_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
+        global_model_fn = lambda: tf.layers.Dense(8, activation=tf.tanh))
+    graph_network_layer5 = modules.GraphNetwork(
+        edge_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
+        node_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
+        global_model_fn = lambda: tf.layers.Dense(8, activation=tf.tanh))
+    graph_network_layer6 = modules.GraphNetwork(
+        edge_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
+        node_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
+        global_model_fn = lambda: tf.layers.Dense(8, activation=tf.tanh))
 
-    h1 = graph_network_layer1(input_graph)
+    h0 = embedding(input_graph)
+    h1 = graph_network_layer1(h0)
     h2 = graph_network_layer2(h1)
     h3 = graph_network_layer3(h2)
+    h4 = graph_network_layer4(h3)
+    h5 = graph_network_layer5(h4)
+    h6 = graph_network_layer6(h5)
 
-    out = h3.globals
+    out = h6.globals
 
     return tf.layers.dense(out, 4, activation=None)

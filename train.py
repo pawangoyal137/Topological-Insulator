@@ -4,6 +4,7 @@ import graph_nets as gn
 import numpy as np
 import pickle
 import tensorflow as tf
+import random
 
 from graph_nets import blocks
 from graph_nets import graphs
@@ -59,33 +60,37 @@ def build_dict(graphs, model):
                 # print("Single Element, skip")
                 continue
 
-            emb = np.zeros((N, 800))
-            for k in range(N):
-                emb[k][i['atoms'][k]] = 1.
-            nodes = np.concatenate([i['coords'], emb], axis=1).astype(np.float32)
-
+            # emb = np.zeros((N, 800))
+            # for k in range(N):
+            #     emb[k][i['atoms'][k]] = 1.
+            # nodes = np.concatenate([i['coords'], emb], axis=1).astype(np.float32)
+            nodes = np.array(i['atoms']).astype(np.int32)
             graph = {
                     "globals": np.reshape(i['lattice'], [9]).astype(np.float32),
                     "nodes": nodes,
-                    "senders": [0],
-                    "receivers": [1],
-                    "edges": [[0.]]
-                    # "senders": [],
-                    # "receivers": [],
-                    # "edges": []
+                    # "senders": [0],
+                    # "receivers": [1],
+                    # "edges": [[0.]]
+                    "senders": [],
+                    "receivers": [],
+                    "edges": []
             }
-            # edges = []
-            # for k1 in range(N-1):
-            #     for k2 in range(k1+1, N):
-            #         a = i['coords'][k1]
-            #         b = i['coords'][k2]
-            #         distance = 1/np.linalg.norm(a-b)
-            #         if distance < 0.1:
-            #             continue
-            #         edges.append([distance])
-            #         graph["senders"].append(k1)
-            #         graph["receivers"].append(k2)
-            # graph["edges"] = np.array(edges).astype(np.float32)
+            edges = []
+            # for k in range(N):
+            #     edges.append([0.])
+            #     graph["senders"].append(k)
+            #     graph["receivers"].append(k)
+
+            for k1 in range(N-1):
+                for k2 in range(k1+1, N):
+                    a = i['coords'][k1]
+                    b = i['coords'][k2]
+                    # if distance < 0.1:
+                    #     continue
+                    edges.append(a-b)
+                    graph["senders"].append(k1)
+                    graph["receivers"].append(k2)
+            graph["edges"] = np.array(edges).astype(np.float32)
             graph_dicts.append(graph)
             labels.append(i['y'])
             lattices.append(i['lattice'])
@@ -102,6 +107,12 @@ def main(_):
 
     train_graphs = graphs[:5120]
     test_graphs = graphs[5120:]
+
+    ## for sampling ##
+    category_ids = [[] for i in range(4)]
+    for i in range(len(train_graphs)):
+        c = train_graphs[i]['y']
+        category_ids[c].append(i)
 
     #  create placeholder
     if FLAGS.model == "rnn":
@@ -146,11 +157,17 @@ def main(_):
     with tf.Session() as sess:
         sess.run(init)
 
-        for i in range(10000):
-            sample_idx = np.random.choice(5120, [4])
+        for i in range(50000):
             batch_graphs = []
-            for k in sample_idx:
-                batch_graphs.append(train_graphs[k])
+            for k in range(16):
+                cat = int(np.random.random() * 4)
+                sample_idx = random.choice(category_ids[cat])
+                batch_graphs.append(train_graphs[sample_idx])
+
+            # sample_idx = np.random.choice(5120, [4])
+            # batch_graphs = []
+            # for k in sample_idx:
+            #     batch_graphs.append(train_graphs[k])
 
             if FLAGS.model == 'rnn':
                 batch_pos, batch_ids, batch_lattice, batch_y, batch_seq_len = build_dict(batch_graphs, FLAGS.model)
