@@ -8,7 +8,7 @@ from graph_nets import modules
 from graph_nets import utils_np
 from graph_nets import utils_tf
 
-def naive(pos, ids, seq_len):
+def naive(pos, ids, seq_len,num_layers):
     """
     A naive RNN model to deal with dynamic length
     """
@@ -17,9 +17,10 @@ def naive(pos, ids, seq_len):
     h_embed = tf.nn.embedding_lookup(W_embed, ids)
 
     h = tf.concat([h_embed, pos], axis=2)
-
-    cell = tf.nn.rnn_cell.BasicLSTMCell(32, state_is_tuple=True, forget_bias=1)
+    cell=[tf.nn.rnn_cell.BasicLSTMCell(32, state_is_tuple=True, forget_bias=1) for i in range(num_layers)]
+    cell = tf.nn.rnn_cell.MultiRNNCell(cell, state_is_tuple=True)
     hidden_out, _ = tf.nn.dynamic_rnn(cell, h, dtype=tf.float32, sequence_length=seq_len)
+    print('bbbbbbb',hidden_out)
     out = tf.gather(hidden_out, seq_len-1, axis=1)
     out = out[:,-1,:]
     return tf.layers.dense(out, 4, activation=None)
@@ -68,3 +69,12 @@ def tinet(input_graph):
     out = h6.globals
 
     return tf.layers.dense(out, 4, activation=None)
+
+# pos = tf.placeholder(tf.float32, [None, None, 3])
+# ids = tf.placeholder(tf.int32, [None, None])
+# lattice = tf.placeholder(tf.float32, [None, 3, 3])
+# y = tf.placeholder(tf.int64, [None])
+# seq_len = tf.placeholder(tf.int32, [None])
+
+if __name__ == '__main__':
+    naive(pos, ids, seq_len)
