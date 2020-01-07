@@ -55,6 +55,9 @@ def cifReader(filename, atomId):
 
     for at in parser.get_structures()[0]._sites:
         x = str(list(at._species._data.keys())[0])
+        if x not in atomId:
+            print("Rare Atoms")
+            raise
         graph['atoms'].append(atomId[x])
         graph['coords'].append(at._coords)
     return graph
@@ -66,7 +69,7 @@ def atom():
     data_dir = "data/all/"
 
     # build atom dict first
-    atoms = set()
+    atoms = {}
     for filename in os.listdir(data_dir):
         id = filename.split('.')[0]
         id_num = int(id.split('MyBaseFileNameCollCode')[1])
@@ -84,17 +87,20 @@ def atom():
             structure = parser.get_structures()[0]
             for at in parser.get_structures()[0]._sites:
                 x = str(list(at._species._data.keys())[0])
-                atoms.add(x)
+                if x in atoms:
+                    atoms[x] += 1
+                else:
+                    atoms[x] = 1
         except:
             print(filename)
             
-        print(len(atoms))
 
     atomId = {}
     i = 0
     for at in atoms:
-        atomId[at] = i
-        i += 1
+        if atoms[at] > 5:
+            atomId[at] = i
+            i += 1
     print(atomId)
     atom_file = "data/atom.pkl"
     output = open(atom_file, 'wb')

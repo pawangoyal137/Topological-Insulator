@@ -33,30 +33,30 @@ def tinet(input_graph):
         use_sent_edges=False,
         use_nodes=True,
         use_globals=False)
-    graph_network_layer1 = modules.GraphNetwork(
-        edge_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
-        node_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
-        global_model_fn = lambda: tf.layers.Dense(8, activation=tf.tanh))
-    graph_network_layer2 = modules.GraphNetwork(
-        edge_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
-        node_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
-        global_model_fn = lambda: tf.layers.Dense(8, activation=tf.tanh))
-    graph_network_layer3 = modules.GraphNetwork(
-        edge_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
-        node_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
-        global_model_fn = lambda: tf.layers.Dense(8, activation=tf.tanh))
-    graph_network_layer4 = modules.GraphNetwork(
-        edge_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
-        node_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
-        global_model_fn = lambda: tf.layers.Dense(8, activation=tf.tanh))
-    graph_network_layer5 = modules.GraphNetwork(
-        edge_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
-        node_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
-        global_model_fn = lambda: tf.layers.Dense(8, activation=tf.tanh))
-    graph_network_layer6 = modules.GraphNetwork(
-        edge_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
-        node_model_fn = lambda: tf.layers.Dense(16, activation=tf.tanh),
-        global_model_fn = lambda: tf.layers.Dense(8, activation=tf.tanh))
+    graph_network_layer1 = blocks.NodeBlock(
+        # edge_model_fn = lambda: tf.layers.Dense(16, activation=tf.nn.relu),
+        node_model_fn = lambda: tf.layers.Dense(32, activation=tf.nn.relu))
+        # global_model_fn = lambda: tf.layers.Dense(8, activation=tf.nn.relu))
+    graph_network_layer2 = blocks.NodeBlock(
+        # edge_model_fn = lambda: tf.layers.Dense(16, activation=tf.nn.relu),
+        node_model_fn = lambda: tf.layers.Dense(32, activation=tf.nn.relu))
+        # global_model_fn = lambda: tf.layers.Dense(8, activation=tf.nn.relu))
+    graph_network_layer3 = blocks.NodeBlock(
+        # edge_model_fn = lambda: tf.layers.Dense(16, activation=tf.nn.relu),
+        node_model_fn = lambda: tf.layers.Dense(32, activation=tf.nn.relu))
+        # global_model_fn = lambda: tf.layers.Dense(8, activation=tf.nn.relu))
+    graph_network_layer4 = blocks.NodeBlock(
+        # edge_model_fn = lambda: tf.layers.Dense(16, activation=tf.nn.relu),
+        node_model_fn = lambda: tf.layers.Dense(32, activation=tf.nn.relu))
+        # global_model_fn = lambda: tf.layers.Dense(8, activation=tf.nn.relu))
+    graph_network_layer5 = blocks.GlobalBlock(
+        # edge_model_fn = lambda: tf.layers.Dense(16, activation=tf.nn.relu),
+        # node_model_fn = lambda: tf.layers.Dense(16, activation=tf.nn.relu),
+        global_model_fn = lambda: tf.layers.Dense(40, activation=tf.nn.relu))
+    graph_network_layer6 = blocks.GlobalBlock(
+        # edge_model_fn = lambda: tf.layers.Dense(16, activation=tf.nn.relu),
+        # node_model_fn = lambda: tf.layers.Dense(16, activation=tf.nn.relu),
+        global_model_fn = lambda: tf.layers.Dense(40, activation=tf.nn.relu))
 
     h0 = embedding(input_graph)
     h1 = graph_network_layer1(h0)
