@@ -139,7 +139,7 @@ def main(_):
                 for v in tf.trainable_variables()])
     print('Total number of params is ', N)
 
-    # defind loss and metric
+    # define loss and metric
     loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
         labels=y, logits=y_hat)
     loss = tf.reduce_mean(loss)
@@ -159,7 +159,6 @@ def main(_):
         sess.run(init)
         for i in range(10000):
 
-            sample_idx = np.random.choice(5120, [4])
             batch_graphs = []
             for k in range(32):
                 cat = int(np.random.random() * 4)
