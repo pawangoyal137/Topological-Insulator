@@ -165,11 +165,6 @@ def main(_):
                 sample_idx = random.choice(category_ids[cat])
                 batch_graphs.append(train_graphs[sample_idx])
 
-            # sample_idx = np.random.choice(5120, [4])
-            # batch_graphs = []
-            # for k in sample_idx:
-            #     batch_graphs.append(train_graphs[k])
-
             if FLAGS.model == 'rnn':
                 batch_pos, batch_ids, batch_lattice, batch_y, batch_seq_len = build_dict(
                     batch_graphs, FLAGS.model)
