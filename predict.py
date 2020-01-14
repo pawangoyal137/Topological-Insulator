@@ -38,6 +38,12 @@ def main(_):
         predict_graphs = pickle.load(f)
     f.close()
     
+    ## merge TI and TCI
+
+    for g in predict_graphs:
+        if g['y'] == 3:
+            g['y'] = 2
+
     if FLAGS.mode == 'graph':
         modified_graphs, _, _ = build_dict(predict_graphs[:1], 'graph')
         input_graph = utils_tf.placeholders_from_data_dicts(modified_graphs[0:1])
@@ -55,7 +61,7 @@ def main(_):
     # merge lattice information w/ atoms
     h_lattice = tf.reshape(lattice, [-1, 9])
     h = tf.concat([h_hat, h_lattice], axis=1)
-    y_hat = tf.layers.dense(h, 4, activation=None)
+    y_hat = tf.layers.dense(h, 3, activation=None)
 
 
     # load model
@@ -85,17 +91,12 @@ def main(_):
             y_value = np.argmax(y_hat_value)
 
 
-            if y_value == 3 and predict_graphs[i]['y'] == 0:
-                ti.append(softmaxAndName(y_hat_value, predict_graphs[i]['name']))
             if y_value == 2 and predict_graphs[i]['y'] == 0:
-                tci.append(softmaxAndName(y_hat_value, predict_graphs[i]['name']))
-
-
+                ti.append(softmaxAndName(y_hat_value, predict_graphs[i]['name']))
+            
     ti.sort(reverse=True)            
-    tci.sort(reverse=True)            
 
     print(ti)
-    print(tci)
 
 
 if __name__ == '__main__':

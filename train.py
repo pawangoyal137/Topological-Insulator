@@ -58,42 +58,28 @@ def build_dict(graphs, model):
             N = len(i['atoms'])
 
             if len(i['atoms']) <= 1:
-                # print("Single Element, skip")
                 continue
-
-            # emb = np.zeros((N, 800))
-            # for k in range(N):
-            #     emb[k][i['atoms'][k]] = 1.
-            # nodes = np.concatenate([i['coords'], emb], axis=1).astype(np.float32)
 
             nodes = np.array(i['atoms']).astype(np.int32)
             graph = {
                 "globals": np.reshape(i['lattice'], [9]).astype(np.float32),
                 "nodes": nodes,
-                # "senders": [0],
-                # "receivers": [1],
-                # "edges": [[0.]]
                 "senders": [],
                 "receivers": [],
                 "edges": []
             }
             edges = []
-            # for k in range(N):
-            #     edges.append([0.])
-            #     graph["senders"].append(k)
-            #     graph["receivers"].append(k)
 
             for k1 in range(N - 1):
                 for k2 in range(k1 + 1, N):
                     a = i['coords'][k1]
                     b = i['coords'][k2]
-                    # if distance < 0.1:
-                    #     continue
                     edges.append(a - b)
                     graph["senders"].append(k1)
                     graph["receivers"].append(k2)
             graph["edges"] = np.array(edges).astype(np.float32)
             graph_dicts.append(graph)
+
             labels.append(i['y'])
             lattices.append(i['lattice'])
         return graph_dicts, labels, lattices
@@ -102,12 +88,19 @@ def build_dict(graphs, model):
 def main(_):
     with open('data/train.pkl', 'rb') as f:
         graphs = pickle.load(f)
+    f.close()
+
+    ## merge TI and TCI
+
+    for g in graphs:
+        if g['y'] == 3:
+            g['y'] = 2
 
     train_graphs = graphs[:5120]
     test_graphs = graphs[5120:]
 
     ## for sampling ##
-    category_ids = [[] for i in range(4)]
+    category_ids = [[] for i in range(3)]
     for i in range(len(train_graphs)):
         c = train_graphs[i]['y']
         category_ids[c].append(i)
@@ -132,7 +125,7 @@ def main(_):
     # merge lattice information w/ atoms
     h_lattice = tf.reshape(lattice, [-1, 9])
     h = tf.concat([h_hat, h_lattice], axis=1)
-    y_hat = tf.layers.dense(h, 4, activation=None)
+    y_hat = tf.layers.dense(h, 3, activation=None)
 
     # count total params
     N = np.sum([np.prod(v.get_shape().as_list())
@@ -161,32 +154,36 @@ def main(_):
 
             batch_graphs = []
             for k in range(32):
-                cat = int(np.random.random() * 4)
+                cat = int(np.random.random() * 3)
                 sample_idx = random.choice(category_ids[cat])
                 batch_graphs.append(train_graphs[sample_idx])
 
             if FLAGS.model == 'rnn':
                 batch_pos, batch_ids, batch_lattice, batch_y, batch_seq_len = build_dict(
                     batch_graphs, FLAGS.model)
-                batch_length,seq_length,_=np.shape(batch_pos)
-                batch_pos_new=np.array([]).reshape(0,seq_length,3)
-                batch_ids_new=np.array([]).reshape(0,seq_length)
-                for i in range(batch_length):
-                    actual_len=batch_seq_len[i]
-                    batch_pos_i=batch_pos[i][:actual_len]
-                    batch_ids_i=batch_ids[i][:actual_len].reshape(1,-1)
-                    concatenated_matrix=np.concatenate((batch_pos_i,batch_ids_i.T),axis=1)
-                    np.random.shuffle(concatenated_matrix)
-                    pos_empty = np.zeros((seq_length - actual_len, 4))
-                    this_pos=np.concatenate((concatenated_matrix,pos_empty),axis=0)
-                    batch_pos_i=this_pos[:,:-1]
-                    batch_pos_i=batch_pos_i.reshape(1,seq_length,-1)
-                    batch_ids_i=this_pos[:,-1:].T
-                    batch_pos_new=np.concatenate((batch_pos_new,batch_pos_i),axis=0)
-                    batch_ids_new=np.concatenate((batch_ids_new,batch_ids_i),axis=0)
+
+                # TODO 
+                # @Pawan: you are still inserting arrays to tensor. 
+                # And it is still very slow
+                # batch_length,seq_length,_=np.shape(batch_pos)
+                # batch_pos_new=np.array([]).reshape(0,seq_length,3)
+                # batch_ids_new=np.array([]).reshape(0,seq_length)
+                # for i in range(batch_length):
+                #     actual_len=batch_seq_len[i]
+                #     batch_pos_i=batch_pos[i][:actual_len]
+                #     batch_ids_i=batch_ids[i][:actual_len].reshape(1,-1)
+                #     concatenated_matrix=np.concatenate((batch_pos_i,batch_ids_i.T),axis=1)
+                #     np.random.shuffle(concatenated_matrix)
+                #     pos_empty = np.zeros((seq_length - actual_len, 4))
+                #     this_pos=np.concatenate((concatenated_matrix,pos_empty),axis=0)
+                #     batch_pos_i=this_pos[:,:-1]
+                #     batch_pos_i=batch_pos_i.reshape(1,seq_length,-1)
+                #     batch_ids_i=this_pos[:,-1:].T
+                #     batch_pos_new=np.concatenate((batch_pos_new,batch_pos_i),axis=0)
+                #     batch_ids_new=np.concatenate((batch_ids_new,batch_ids_i),axis=0)
                 
-                batch_pos=batch_pos_new
-                batch_ids=batch_ids_new
+                # batch_pos=batch_pos_new
+                # batch_ids=batch_ids_new
                 feed_dict = {
                     pos: batch_pos,
                     ids: batch_ids,
@@ -196,12 +193,6 @@ def main(_):
             elif FLAGS.model == "graph":
                 batch_graphnets, batch_labels, batch_lattice = build_dict(
                     batch_graphs, FLAGS.model)
-                # print(batch_graphnets)
-                # print("######")
-                # print(batch_labels)
-                # print("######")
-                # print(batch_lattice)
-                # input()
                 train_batch_graph_data = utils_np.data_dicts_to_graphs_tuple(
                     batch_graphnets)
                 feed_dict = {
@@ -215,11 +206,11 @@ def main(_):
                 total_loss = 0
                 total_acc = 0
 
-                relevant_elements = [0, 0, 0, 0]
-                selected_elements = [0, 0, 0, 0]
-                true_positives = [0, 0, 0, 0]
+                relevant_elements = [0, 0, 0]
+                selected_elements = [0, 0, 0]
+                true_positives = [0, 0, 0]
 
-                discrimiate = np.zeros((4, 4)).astype(np.int32)
+                discrimiate = np.zeros((3, 3)).astype(np.int32)
                 for j in range(len(test_graphs)):
                     if FLAGS.model == 'rnn':
                         batch_pos, batch_ids, batch_lattice, batch_y, batch_seq_len = build_dict(
@@ -241,7 +232,7 @@ def main(_):
                             input_graph: test_batch_graph_data,
                             y: batch_labels,
                             lattice: batch_lattice}
-
+                        
                     loss_value, acc, predicts_value = sess.run(
                         [loss, accuracy, predicts], feed_dict=feed_dict)
 
@@ -256,14 +247,11 @@ def main(_):
 
                 precision = None
                 recall = None
-                if selected_elements[2] + selected_elements[3] != 0:
-                    precision = (
-                        true_positives[2] + true_positives[3]) / (
-                        selected_elements[2] + selected_elements[3])
+                if selected_elements[2] != 0:
+                    precision = true_positives[2] / selected_elements[2] 
 
-                if relevant_elements[2] + relevant_elements[3] != 0:
-                    recall = (true_positives[2] + true_positives[3]) / \
-                        (relevant_elements[2] + relevant_elements[3])
+                if relevant_elements[2] != 0:
+                    recall = true_positives[2] / relevant_elements[2]
 
                 if precision is not None and recall is not None:
                     f1_score = 2 * precision * recall / (precision + recall)
