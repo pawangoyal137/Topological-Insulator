@@ -165,25 +165,25 @@ def main(_):
                 # TODO 
                 # @Pawan: you are still inserting arrays to tensor. 
                 # And it is still very slow
-                # batch_length,seq_length,_=np.shape(batch_pos)
-                # batch_pos_new=np.array([]).reshape(0,seq_length,3)
-                # batch_ids_new=np.array([]).reshape(0,seq_length)
-                # for i in range(batch_length):
-                #     actual_len=batch_seq_len[i]
-                #     batch_pos_i=batch_pos[i][:actual_len]
-                #     batch_ids_i=batch_ids[i][:actual_len].reshape(1,-1)
-                #     concatenated_matrix=np.concatenate((batch_pos_i,batch_ids_i.T),axis=1)
-                #     np.random.shuffle(concatenated_matrix)
-                #     pos_empty = np.zeros((seq_length - actual_len, 4))
-                #     this_pos=np.concatenate((concatenated_matrix,pos_empty),axis=0)
-                #     batch_pos_i=this_pos[:,:-1]
-                #     batch_pos_i=batch_pos_i.reshape(1,seq_length,-1)
-                #     batch_ids_i=this_pos[:,-1:].T
-                #     batch_pos_new=np.concatenate((batch_pos_new,batch_pos_i),axis=0)
-                #     batch_ids_new=np.concatenate((batch_ids_new,batch_ids_i),axis=0)
+                batch_length,seq_length,_=np.shape(batch_pos)
+                batch_pos_new=np.array([]).reshape(0,seq_length,3)
+                batch_ids_new=np.array([]).reshape(0,seq_length)
+                for i in range(batch_length):
+                     actual_len=batch_seq_len[i]
+                     batch_pos_i=batch_pos[i][:actual_len]
+                     batch_ids_i=batch_ids[i][:actual_len].reshape(1,-1)
+                     concatenated_matrix=np.concatenate((batch_pos_i,batch_ids_i.T),axis=1)
+                     np.random.shuffle(concatenated_matrix)
+                     pos_empty = np.zeros((seq_length - actual_len, 4))
+                     this_pos=np.concatenate((concatenated_matrix,pos_empty),axis=0)
+                     batch_pos_i=this_pos[:,:-1]
+                     batch_pos_i=batch_pos_i.reshape(1,seq_length,-1)
+                     batch_ids_i=this_pos[:,-1:].T
+                     batch_pos_new=np.concatenate((batch_pos_new,batch_pos_i),axis=0)
+                     batch_ids_new=np.concatenate((batch_ids_new,batch_ids_i),axis=0)
                 
-                # batch_pos=batch_pos_new
-                # batch_ids=batch_ids_new
+                batch_pos=batch_pos_new
+                batch_ids=batch_ids_new
                 feed_dict = {
                     pos: batch_pos,
                     ids: batch_ids,
@@ -202,7 +202,7 @@ def main(_):
             loss_value, _ = sess.run(
                 [loss, optimizer], feed_dict=feed_dict)
             
-            
+            print(it)
             if it % 100 == 99:
                 total_loss = 0
                 total_acc = 0
