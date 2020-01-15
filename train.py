@@ -157,7 +157,7 @@ def main(_):
     # run session
     with tf.Session() as sess:
         sess.run(init)
-        for i in range(10000):
+        for it in range(10000):
 
             sample_idx = np.random.choice(5120, [4])
             batch_graphs = []
@@ -216,8 +216,9 @@ def main(_):
                     lattice: batch_lattice}
             loss_value, _ = sess.run(
                 [loss, optimizer], feed_dict=feed_dict)
-
-            if i % 100 == 99:
+            
+            
+            if it % 100 == 99:
                 total_loss = 0
                 total_acc = 0
 
