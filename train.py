@@ -202,7 +202,6 @@ def main(_):
             loss_value, _ = sess.run(
                 [loss, optimizer], feed_dict=feed_dict)
             
-            print(it)
             if it % 100 == 99:
                 total_loss = 0
                 total_acc = 0
